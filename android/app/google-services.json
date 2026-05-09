@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "595280279262",
+    "firebase_url": "https://questra-sleeplove-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "questra-sleeplove",
+    "storage_bucket": "questra-sleeplove.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:595280279262:android:195474caef669d66e3f44f",
+        "android_client_info": {
+          "package_name": "com.questra.sleeplove"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "595280279262-7addjepebch38qegk5vack46sohd91ch.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvtA22Rk7Dylb-XO-pRhkRkg_N6JG7KOc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "595280279262-7addjepebch38qegk5vack46sohd91ch.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

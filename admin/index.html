@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sleep Love Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #020617;
+            --surface: #0F172A;
+            --accent: #10B981;
+            --primary: #9D50FF;
+            --text: #F8FAFC;
+        }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { background: var(--surface); border-radius: 20px; padding: 24px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 8px; font-size: 14px; opacity: 0.7; }
+        input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white; box-sizing: border-box; }
+        .user-item, .sound-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .btn { padding: 12px 24px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-pro { background: var(--accent); color: black; }
+        .btn-danger { background: #EF4444; color: white; }
+        .btn-free { background: #334155; color: white; }
+        h2 { margin-top: 0; display: flex; align-items: center; gap: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sleep Love Admin</h1>
+        
+        <div class="grid">
+            <!-- Sounds Management -->
+            <div class="card">
+                <h2>🎵 Add New Sound</h2>
+                <div class="form-group">
+                    <label>Sound Name</label>
+                    <input type="text" id="sound-name" placeholder="e.g. Tropical Rain">
+                </div>
+                <div class="form-group">
+                    <label>Audio URL (Direct Link)</label>
+                    <input type="text" id="sound-url" placeholder="http://...">
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="sound-category">
+                        <option value="rain">Rain</option>
+                        <option value="nature">Nature</option>
+                        <option value="meditation">Meditation</option>
+                    </select>
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="sound-free" style="width: auto;" checked>
+                    <label style="margin: 0;">Is Free Sound?</label>
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addSound()">Add Sound to App</button>
+            </div>
+
+            <!-- Users Management -->
+            <div class="card">
+                <h2>👥 Manage Users</h2>
+                <div id="users-list">
+                    <p>Loading users...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📜 Existing Sounds</h2>
+            <div id="sounds-list">
+                <p>Loading sounds...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, update, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDInMvSnCo7Q4cEW2ba-JnFGjjkREPkH8o",
+            authDomain: "questra-sleeplove.firebaseapp.com",
+            databaseURL: "https://questra-sleeplove-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "questra-sleeplove",
+            storageBucket: "questra-sleeplove.firebasestorage.app",
+            messagingSenderId: "595280279262",
+            appId: "1:595280279262:web:bfbf5b46543a97ace3f44f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const usersList = document.getElementById('users-list');
+        const soundsList = document.getElementById('sounds-list');
+
+        // Manage Users
+        onValue(ref(db, 'users'), (snapshot) => {
+            const data = snapshot.val();
+            usersList.innerHTML = '';
+            if (!data) return;
+            for (let uid in data) {
+                const user = data[uid];
+                const item = document.createElement('div');
+                item.className = 'user-item';
+                item.innerHTML = `
+                    <div><strong>${user.email || 'Anonymous'}</strong><br><small>${user.isPro ? 'Pro' : 'Free'}</small></div>
+                    <button class="btn ${user.isPro ? 'btn-free' : 'btn-pro'}" onclick="togglePro('${uid}', ${!user.isPro})">
+                        ${user.isPro ? 'Set Free' : 'Set Pro'}
+                    </button>
+                `;
+                usersList.appendChild(item);
+            }
+        });
+
+        // Manage Sounds
+        onValue(ref(db, 'sounds'), (snapshot) => {
+            const data = snapshot.val();
+            soundsList.innerHTML = '';
+            if (!data) {
+                soundsList.innerHTML = '<p>No sounds added yet.</p>';
+                return;
+            }
+            for (let id in data) {
+                const s = data[id];
+                const item = document.createElement('div');
+                item.className = 'sound-item';
+                item.innerHTML = `
+                    <div><strong>${s.name}</strong> (${s.category})<br><small>${s.isFree ? 'Free' : 'Premium'}</small></div>
+                    <button class="btn btn-danger" onclick="deleteSound('${id}')">Delete</button>
+                `;
+                soundsList.appendChild(item);
+            }
+        });
+
+        window.addSound = () => {
+            const name = document.getElementById('sound-name').value;
+            const url = document.getElementById('sound-url').value;
+            const category = document.getElementById('sound-category').value;
+            const isFree = document.getElementById('sound-free').checked;
+
+            if (!name || !url) return alert("Please fill all fields");
+
+            push(ref(db, 'sounds'), {
+                name, remoteUrl: url, category, isFree, 
+                icon: category === 'rain' ? 'cloudy_snowing' : (category === 'nature' ? 'nature' : 'spa')
+            });
+            
+            document.getElementById('sound-name').value = '';
+            document.getElementById('sound-url').value = '';
+        };
+
+        window.deleteSound = (id) => {
+            if(confirm('Are you sure?')) remove(ref(db, `sounds/${id}`));
+        };
+
+        window.togglePro = (uid, status) => {
+            update(ref(db, `users/${uid}`), { isPro: status });
+        };
+    </script>
+</body>
+</html>
