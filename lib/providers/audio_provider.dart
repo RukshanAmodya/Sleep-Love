@@ -13,7 +13,7 @@ class AudioState {
   final Set<String> loadingIds;
   final double setupProgress;
   final bool isSetupComplete;
-  final bool isProSetupNeeded;
+  final bool isPremiumSetupNeeded;
 
   AudioState({
     required this.availableSounds,
@@ -21,7 +21,7 @@ class AudioState {
     this.loadingIds = const {},
     this.setupProgress = 0,
     this.isSetupComplete = false,
-    this.isProSetupNeeded = false,
+    this.isPremiumSetupNeeded = false,
   });
 
   AudioState copyWith({
@@ -30,7 +30,7 @@ class AudioState {
     Set<String>? loadingIds,
     double? setupProgress,
     bool? isSetupComplete,
-    bool? isProSetupNeeded,
+    bool? isPremiumSetupNeeded,
   }) {
     return AudioState(
       availableSounds: availableSounds ?? this.availableSounds,
@@ -38,7 +38,7 @@ class AudioState {
       loadingIds: loadingIds ?? this.loadingIds,
       setupProgress: setupProgress ?? this.setupProgress,
       isSetupComplete: isSetupComplete ?? this.isSetupComplete,
-      isProSetupNeeded: isProSetupNeeded ?? this.isProSetupNeeded,
+      isPremiumSetupNeeded: isPremiumSetupNeeded ?? this.isPremiumSetupNeeded,
     );
   }
 }
@@ -77,24 +77,25 @@ class AudioNotifier extends Notifier<AudioState> {
           ));
         });
         state = state.copyWith(availableSounds: sounds);
-        _checkIfProSetupNeeded();
+        _checkIfPremiumSetupNeeded();
       }
     });
   }
 
-  void _checkIfProSetupNeeded() async {
-    final user = ref.read(userProvider);
-    if (user.isPro) {
+  void _checkIfPremiumSetupNeeded() async {
+    final hasPremium = ref.read(hasPremiumProvider);
+    if (hasPremium) {
       final prefs = await SharedPreferences.getInstance();
+      final user = ref.read(userProvider);
       final proComplete = prefs.getBool('pro_setup_complete_${user.uid}') ?? false;
       if (!proComplete) {
-        state = state.copyWith(isProSetupNeeded: true);
+        state = state.copyWith(isPremiumSetupNeeded: true);
       }
     }
   }
 
-  Future<void> startInitialSetup({bool forPro = false}) async {
-    final targets = forPro 
+  Future<void> startInitialSetup({bool forPremium = false}) async {
+    final targets = forPremium 
         ? state.availableSounds.where((s) => !s.isFree).toList()
         : state.availableSounds.where((s) => s.isFree).toList();
         
@@ -116,10 +117,10 @@ class AudioNotifier extends Notifier<AudioState> {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    if (forPro) {
+    if (forPremium) {
       final user = ref.read(userProvider);
       await prefs.setBool('pro_setup_complete_${user.uid}', true);
-      state = state.copyWith(isProSetupNeeded: false, setupProgress: 1.0);
+      state = state.copyWith(isPremiumSetupNeeded: false, setupProgress: 1.0);
     } else {
       await prefs.setBool('setup_complete', true);
       state = state.copyWith(isSetupComplete: true, setupProgress: 1.0);
@@ -148,7 +149,7 @@ class AudioNotifier extends Notifier<AudioState> {
     }
   }
 
-  Future<void> toggleSound(SoundModel sound, bool isPro) async {
+  Future<void> toggleSound(SoundModel sound, bool hasPremium) async {
     final isActive = state.activeSounds.any((s) => s.id == sound.id);
     
     if (isActive) {
@@ -157,8 +158,9 @@ class AudioNotifier extends Notifier<AudioState> {
         activeSounds: state.activeSounds.where((s) => s.id != sound.id).toList(),
       );
     } else {
-      if (!isPro && state.activeSounds.length >= 2) {
-        throw 'Free limit reached';
+      // Limit removed for all users with active time
+      if (!hasPremium && state.activeSounds.length >= 1) {
+        throw 'Time expired. Watch an ad to continue mixing.';
       }
 
       state = state.copyWith(loadingIds: {...state.loadingIds, sound.id});
