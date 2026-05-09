@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/ad_service.dart';
 
 class UserState {
   final String? uid;
@@ -102,6 +103,9 @@ class UserNotifier extends Notifier<UserState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_pro_permanent', true);
     
+    // Sync with AdService
+    AdService().setPremiumStatus(true);
+    
     if (state.uid != null) {
       await _db.ref('users/${state.uid}').update({'isPro': true});
     }
@@ -109,6 +113,8 @@ class UserNotifier extends Notifier<UserState> {
 
   void watchAdAndEarnHour() {
     addPremiumTime(1);
+    // Ad earned time, so ads should be disabled for at least an hour
+    AdService().setPremiumStatus(true);
   }
 }
 
