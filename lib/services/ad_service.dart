@@ -1,75 +1,127 @@
-import 'dart:io';
-import 'package:unity_ads_plugin/unity_ads_plugin.dart';
+import 'package:unity_levelplay_mediation/unity_levelplay_mediation.dart';
 
 class AdService {
-  static const String androidGameId = '6109553';
-  static const String iosGameId = '6109552';
+  // Using only Android App ID as requested
+  static const String androidAppKey = '6109553';
+  
+  // NOTE: Replace these with your actual Ad Unit IDs from LevelPlay Dashboard
+  static const String rewardedAdUnitId = 'YOUR_REWARDED_AD_UNIT_ID'; 
+  static const String interstitialAdUnitId = 'YOUR_INTERSTITIAL_AD_UNIT_ID';
 
-  static String get gameId => Platform.isAndroid ? androidGameId : iosGameId;
+  static String get appKey => androidAppKey;
 
-  static String get rewardedPlacementId => Platform.isAndroid ? 'Rewarded_Android' : 'Rewarded_iOS';
-  static String get interstitialPlacementId => Platform.isAndroid ? 'Interstitial_Android' : 'Interstitial_iOS';
-  static String get bannerPlacementId => Platform.isAndroid ? 'Banner_Android' : 'Banner_iOS';
+  static LevelPlayRewardedAd? _rewardedAd;
+  static LevelPlayInterstitialAd? _interstitialAd;
+  static Function? _onRewardCallback;
 
   static Future<void> init() async {
-    await UnityAds.init(
-      gameId: gameId,
-      testMode: true, // Set to false for production
-      onComplete: () {
-        print('Unity Ads Initialization Complete');
-        loadAllAds();
-      },
-      onFailed: (error, message) => print('Unity Ads Initialization Failed: $error $message'),
-    );
+    try {
+      LevelPlayInitRequest initRequest = LevelPlayInitRequest.builder(appKey).build();
+
+      await LevelPlay.init(
+        initRequest: initRequest,
+        initListener: MyLevelPlayInitListener(),
+      );
+      
+      print('Unity LevelPlay (Android Only) Initialization Started...');
+    } catch (e) {
+      print('Unity LevelPlay Initialization Failed: $e');
+    }
+  }
+
+  static void setupAds() {
+    _rewardedAd = LevelPlayRewardedAd(adUnitId: rewardedAdUnitId);
+    _interstitialAd = LevelPlayInterstitialAd(adUnitId: interstitialAdUnitId);
+
+    _rewardedAd?.setListener(MyRewardedAdListener());
+    _interstitialAd?.setListener(MyInterstitialAdListener());
+
+    loadAllAds();
   }
 
   static void loadAllAds() {
-    loadRewarded();
-    loadInterstitial();
+    _rewardedAd?.loadAd();
+    _interstitialAd?.loadAd();
   }
 
-  static void loadRewarded() {
-    UnityAds.load(
-      placementId: rewardedPlacementId,
-      onComplete: (placementId) => print('Rewarded Ad Loaded: $placementId'),
-      onFailed: (placementId, error, message) => print('Rewarded Ad Load Failed: $error $message'),
-    );
+  static void showInterstitial() async {
+    bool isReady = await _interstitialAd?.isAdReady() ?? false;
+    if (isReady) {
+      _interstitialAd?.showAd();
+    } else {
+      print('Interstitial Ad not ready, loading...');
+      _interstitialAd?.loadAd();
+    }
   }
 
-  static void loadInterstitial() {
-    UnityAds.load(
-      placementId: interstitialPlacementId,
-      onComplete: (placementId) => print('Interstitial Ad Loaded: $placementId'),
-      onFailed: (placementId, error, message) => print('Interstitial Ad Load Failed: $error $message'),
-    );
+  static void showRewarded(Function onCompleteReward) async {
+    _onRewardCallback = onCompleteReward;
+    bool isReady = await _rewardedAd?.isAdReady() ?? false;
+    if (isReady) {
+      _rewardedAd?.showAd();
+    } else {
+      print('Rewarded Ad not ready, loading...');
+      _rewardedAd?.loadAd();
+    }
   }
 
-  static void showInterstitial() {
-    UnityAds.showVideoAd(
-      placementId: interstitialPlacementId,
-      onComplete: (placementId) {
-        print('Interstitial Ad Complete');
-        loadInterstitial(); // Reload for next time
-      },
-      onFailed: (placementId, error, message) {
-        print('Interstitial Ad Failed: $error $message');
-        loadInterstitial();
-      },
-    );
+  static void handleReward() {
+    if (_onRewardCallback != null) {
+      _onRewardCallback!();
+      _onRewardCallback = null;
+    }
   }
+}
 
-  static void showRewarded(Function onCompleteReward) {
-    UnityAds.showVideoAd(
-      placementId: rewardedPlacementId,
-      onComplete: (placementId) {
-        onCompleteReward();
-        print('Rewarded Ad Complete');
-        loadRewarded(); // Reload for next time
-      },
-      onFailed: (placementId, error, message) {
-        print('Rewarded Ad Failed: $error $message');
-        loadRewarded();
-      },
-    );
+class MyLevelPlayInitListener extends LevelPlayInitListener {
+  @override
+  void onInitFailed(LevelPlayInitError error) => print('Unity LevelPlay Init Failed: ${error.errorMessage}');
+
+  @override
+  void onInitSuccess(LevelPlayConfiguration configuration) {
+    print('Unity LevelPlay Init Success!');
+    AdService.setupAds();
   }
+}
+
+class MyRewardedAdListener extends LevelPlayRewardedAdListener {
+  @override
+  void onAdLoaded(LevelPlayAdInfo adInfo) => print('Rewarded Ad Loaded');
+  @override
+  void onAdLoadFailed(LevelPlayAdError error) => print('Rewarded Ad Load Failed: ${error.errorMessage}');
+  @override
+  void onAdDisplayed(LevelPlayAdInfo adInfo) => print('Rewarded Ad Displayed');
+  @override
+  void onAdDisplayFailed(LevelPlayAdError error, LevelPlayAdInfo adInfo) => print('Rewarded Ad Display Failed');
+  @override
+  void onAdClosed(LevelPlayAdInfo adInfo) {
+    print('Rewarded Ad Closed');
+    AdService._rewardedAd?.loadAd();
+  }
+  @override
+  void onAdClicked(LevelPlayAdInfo adInfo) => print('Rewarded Ad Clicked');
+  @override
+  void onAdRewarded(LevelPlayReward reward, LevelPlayAdInfo adInfo) => AdService.handleReward();
+  @override
+  void onAdInfoChanged(LevelPlayAdInfo adInfo) {}
+}
+
+class MyInterstitialAdListener extends LevelPlayInterstitialAdListener {
+  @override
+  void onAdLoaded(LevelPlayAdInfo adInfo) => print('Interstitial Ad Loaded');
+  @override
+  void onAdLoadFailed(LevelPlayAdError error) => print('Interstitial Ad Load Failed: ${error.errorMessage}');
+  @override
+  void onAdDisplayed(LevelPlayAdInfo adInfo) => print('Interstitial Ad Displayed');
+  @override
+  void onAdDisplayFailed(LevelPlayAdError error, LevelPlayAdInfo adInfo) => print('Interstitial Ad Display Failed');
+  @override
+  void onAdClosed(LevelPlayAdInfo adInfo) {
+    print('Interstitial Ad Closed');
+    AdService._interstitialAd?.loadAd();
+  }
+  @override
+  void onAdClicked(LevelPlayAdInfo adInfo) => print('Interstitial Ad Clicked');
+  @override
+  void onAdInfoChanged(LevelPlayAdInfo adInfo) {}
 }

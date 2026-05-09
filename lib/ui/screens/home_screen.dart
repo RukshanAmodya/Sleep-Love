@@ -88,7 +88,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           key: _scaffoldKey,
           backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
           drawer: _buildDrawer(context, isDark),
-          drawerEnableOpenDragGesture: false, // Disable swipe to open drawer
+          drawerEnableOpenDragGesture: false,
           body: AtmosphericOverlay(
             showRain: hasRainActive,
             showThunder: audioState.activeSounds.any((s) => s.name.toLowerCase().contains('thunder')),
@@ -102,7 +102,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       duration: 1.seconds,
                       child: Container(
                         key: ValueKey(_getBackgroundImage()),
-                        height: 380, // Increased height for center timer
+                        height: 380,
                         decoration: BoxDecoration(
                           image: DecorationImage(image: AssetImage(_getBackgroundImage()), fit: BoxFit.cover),
                         ),
@@ -120,6 +120,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
+                                  // Top Left: Pro Status Indicator
                                   GestureDetector(
                                     key: _proStatusKey,
                                     onTap: () => hasPremium ? null : _showUpgradeSheet(context),
@@ -152,9 +153,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               
                               const Spacer(),
                               
-                              // LARGE CENTER TIMER
-                              if (!user.isPro)
-                                _buildCenterPremiumTimer(user, key: _timerKey),
+                              // LARGE CENTER TIMER (Always visible now)
+                              _buildCenterPremiumTimer(user, hasPremium, key: _timerKey),
 
                               const Spacer(),
                               
@@ -316,10 +316,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildCenterPremiumTimer(UserState user, {Key? key}) {
+  Widget _buildCenterPremiumTimer(UserState user, bool hasPremium, {Key? key}) {
     final progress = ref.watch(premiumProgressProvider);
     final hours = (user.premiumSecondsRemaining / 3600).floor();
     final mins = ((user.premiumSecondsRemaining % 3600) / 60).floor();
+
+    String timeText = user.isPro ? "24:00" : (user.premiumSecondsRemaining > 0 ? "${hours}h ${mins}m" : "00:00");
+    double progressValue = user.isPro ? 1.0 : (progress == 0 && user.premiumSecondsRemaining > 0 ? 1 : progress);
 
     return Column(
       key: key,
@@ -330,17 +333,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             SizedBox(
               height: 100, width: 100,
               child: CircularProgressIndicator(
-                value: progress == 0 && user.premiumSecondsRemaining > 0 ? 1 : progress,
+                value: progressValue,
                 strokeWidth: 6,
                 backgroundColor: Colors.white10,
-                valueColor: const AlwaysStoppedAnimation(AppColors.accent),
+                valueColor: AlwaysStoppedAnimation(user.isPro ? Colors.amber : AppColors.accent),
               ),
             ),
             Column(
               children: [
-                const Icon(Icons.bolt_rounded, color: AppColors.accent, size: 28),
+                Icon(Icons.bolt_rounded, color: user.isPro ? Colors.amber : AppColors.accent, size: 28),
                 Text(
-                  user.premiumSecondsRemaining > 0 ? "${hours}h ${mins}m" : "00:00",
+                  timeText,
                   style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ],
@@ -349,7 +352,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          user.premiumSecondsRemaining > 0 ? "Premium Active" : "No Premium",
+          hasPremium ? "Pro Activated" : "No Premium",
           style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white, shadows: [const Shadow(blurRadius: 10, color: Colors.black45)]),
         ),
       ],
