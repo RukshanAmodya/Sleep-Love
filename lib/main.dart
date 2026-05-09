@@ -14,7 +14,7 @@ import 'ui/screens/setup_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FirebaseService.init();
-  await AdService.init();
+  await AdService().initialize();
   await NotificationService.init();
   runApp(const ProviderScope(child: SleepLoveApp()));
 }

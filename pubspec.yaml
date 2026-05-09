@@ -40,7 +40,7 @@ dependencies:
   sensors_plus: ^7.0.0
   shared_preferences: ^2.5.5
   intl: ^0.20.2
-  unity_levelplay_mediation: ^9.2.0
+  unity_ads_plugin: ^0.3.30
   path_provider: ^2.1.5
   dio: ^5.9.2
   flutter_local_notifications: ^17.0.0

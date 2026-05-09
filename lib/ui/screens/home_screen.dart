@@ -562,7 +562,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 32),
             GestureDetector(
               onTap: () {
-                AdService.showInterstitial();
+                AdService().showInterstitial();
                 ref.read(userProvider.notifier).upgradeToPro();
                 Navigator.pop(context);
               },
@@ -575,10 +575,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 16),
             TextButton(
               onPressed: () {
-                AdService.showRewarded(() {
-                  ref.read(userProvider.notifier).watchAdAndEarnHour();
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Premium access granted for 1 hour!")));
-                });
+                AdService().showRewarded(
+                  onRewardEarned: () {
+                    ref.read(userProvider.notifier).watchAdAndEarnHour();
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Premium access granted for 1 hour!")));
+                  },
+                );
                 Navigator.pop(context);
               },
               child: const Text("Watch Ad for 1 Hour Premium", style: TextStyle(color: Colors.white54)),
