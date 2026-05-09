@@ -62,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen> {
             fit: BoxFit.cover,
             errorBuilder: (c, e, s) => Container(color: AppColors.bgDark),
           ),
-          Container(color: Colors.black.withOpacity(0.2)),
+          Container(color: Colors.black.withValues(alpha: 0.2)),
           Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -100,7 +100,7 @@ class _SplashScreenState extends State<SplashScreen> {
                         decoration: BoxDecoration(
                           gradient: AppColors.purpleGradient,
                           borderRadius: BorderRadius.circular(10),
-                          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 10)],
+                          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.5), blurRadius: 10)],
                         ),
                       ),
                     ),

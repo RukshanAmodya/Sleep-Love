@@ -68,7 +68,7 @@ class _TourOverlayState extends State<TourOverlay> {
             onTap: next,
             child: ColorFiltered(
               colorFilter: ColorFilter.mode(
-                Colors.black.withOpacity(0.8),
+                Colors.black.withValues(alpha: 0.8),
                 BlendMode.srcOut,
               ),
               child: Stack(
@@ -109,8 +109,8 @@ class _TourOverlayState extends State<TourOverlay> {
                   decoration: BoxDecoration(
                     color: AppColors.surfaceDark,
                     borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.5), width: 2),
-                    boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.2), blurRadius: 20)],
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 2),
+                    boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.2), blurRadius: 20)],
                   ),
                   child: Column(
                     children: [

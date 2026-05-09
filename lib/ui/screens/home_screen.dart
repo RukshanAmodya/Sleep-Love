@@ -16,7 +16,6 @@ import '../widgets/liquid_play_button.dart';
 import '../widgets/tour_overlay.dart';
 import '../../services/auth_service.dart';
 import '../../services/ad_service.dart';
-import '../../services/download_service.dart';
 import 'info_screens.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -29,7 +28,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String selectedCategory = 'All';
   final String dailyQuote = "Sleep is the best meditation.";
-  final DownloadService _downloadService = DownloadService();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Tour Keys
@@ -132,7 +130,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                       decoration: BoxDecoration(
-                                        color: hasPremium ? AppColors.accent.withOpacity(0.2) : Colors.white10, 
+                                        color: hasPremium ? AppColors.accent.withValues(alpha: 0.2) : Colors.white10, 
                                         borderRadius: BorderRadius.circular(20), 
                                         border: Border.all(color: hasPremium ? AppColors.accent : Colors.white24)
                                       ),
@@ -190,9 +188,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               duration: 300.ms,
                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                               decoration: BoxDecoration(
-                                color: isSelected ? AppColors.primary : (isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
+                                color: isSelected ? AppColors.primary : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
                                 borderRadius: BorderRadius.circular(30),
-                                boxShadow: isSelected ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 10)] : null,
+                                boxShadow: isSelected ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 10)] : null,
                               ),
                               child: Text(cat, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? Colors.white : (isDark ? Colors.white54 : Colors.black54))),
                             ),
@@ -252,9 +250,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(isActive ? 30 : 22),
                                         gradient: isActive ? AppColors.purpleGradient : null,
-                                        color: isActive ? null : (isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05)),
+                                        color: isActive ? null : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05)),
                                         border: Border.all(color: isActive ? Colors.white30 : (isDark ? Colors.white12 : Colors.black12), width: 1.5),
-                                        boxShadow: isActive ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 15)] : null,
+                                        boxShadow: isActive ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.4), blurRadius: 15)] : null,
                                       ),
                                       child: Center(
                                         child: isLoading
@@ -462,7 +460,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Container(
                     width: 100, padding: const EdgeInsets.symmetric(vertical: 20),
                     decoration: BoxDecoration(
-                      color: locked ? Colors.white.withOpacity(0.02) : Colors.white.withOpacity(0.05),
+                      color: locked ? Colors.white.withValues(alpha: 0.02) : Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: locked ? Colors.white10 : Colors.white24),
                     ),
@@ -568,7 +566,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               },
               child: Container(
                 height: 60, width: double.infinity,
-                decoration: BoxDecoration(gradient: AppColors.purpleGradient, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20)]),
+                decoration: BoxDecoration(gradient: AppColors.purpleGradient, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 20)]),
                 child: const Center(child: Text("Upgrade to Pro - \$4.99/mo", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
               ),
             ),

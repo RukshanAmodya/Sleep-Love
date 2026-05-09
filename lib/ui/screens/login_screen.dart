@@ -58,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: 120,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 40)],
+                      boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 40)],
                     ),
                     child: const Icon(Icons.nights_stay_rounded, size: 80, color: Colors.white),
                   ),
@@ -99,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: BoxDecoration(
                               gradient: AppColors.purpleGradient,
                               borderRadius: BorderRadius.circular(20),
-                              boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 20)],
+                              boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.4), blurRadius: 20)],
                             ),
                             child: Center(
                               child: Text(
@@ -136,9 +136,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildTextField(TextEditingController controller, String hint, IconData icon, {bool isObscure = false}) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: TextField(
         controller: controller,

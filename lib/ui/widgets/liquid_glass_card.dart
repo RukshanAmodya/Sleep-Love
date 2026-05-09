@@ -26,7 +26,7 @@ class LiquidGlassCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -39,18 +39,18 @@ class LiquidGlassCard extends StatelessWidget {
           child: Container(
             padding: padding,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 width: 1.5,
               ),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.02),
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.white.withValues(alpha: 0.02),
                 ],
               ),
             ),
@@ -97,12 +97,12 @@ class _AnimatedLiquidBackgroundState extends State<AnimatedLiquidBackground> wit
             Positioned(
               top: -100 + (50 * _controller.value),
               left: -100 + (50 * _controller.value),
-              child: _Circle(color: Colors.deepPurple.withOpacity(0.3), size: 400),
+              child: _Circle(color: Colors.deepPurple.withValues(alpha: 0.3), size: 400),
             ),
             Positioned(
               bottom: -150 + (100 * _controller.value),
               right: -50 - (50 * _controller.value),
-              child: _Circle(color: Colors.blueAccent.withOpacity(0.2), size: 500),
+              child: _Circle(color: Colors.blueAccent.withValues(alpha: 0.2), size: 500),
             ),
           ],
         );

@@ -46,7 +46,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.black.withOpacity(0.8), Colors.transparent],
+                colors: [Colors.black.withValues(alpha: 0.8), Colors.transparent],
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
               ),
@@ -87,7 +87,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                         decoration: BoxDecoration(
                           gradient: AppColors.purpleGradient,
                           borderRadius: BorderRadius.circular(4),
-                          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 10)],
+                          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.5), blurRadius: 10)],
                         ),
                       ),
                     ),

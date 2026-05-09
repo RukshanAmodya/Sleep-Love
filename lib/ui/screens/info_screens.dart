@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/liquid_glass_card.dart';
-import '../../core/constants.dart';
 
 class InfoScreen extends StatelessWidget {
   final String title;

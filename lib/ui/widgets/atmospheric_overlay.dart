@@ -96,7 +96,7 @@ class _AtmosphericOverlayState extends State<AtmosphericOverlay> with SingleTick
         if (_isFlashing)
           Positioned.fill(
             child: Container(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
             ),
           ),
       ],
@@ -139,19 +139,19 @@ class AdvancedRainPainter extends CustomPainter {
           pos,
           droplet.size,
           [
-            Colors.white.withOpacity(0.4),
-            Colors.white.withOpacity(0.05),
+            Colors.white.withValues(alpha: 0.4),
+            Colors.white.withValues(alpha: 0.05),
           ],
         );
       
       canvas.drawCircle(pos, droplet.size, paint);
 
-      final glarePaint = Paint()..color = Colors.white.withOpacity(0.4);
+      final glarePaint = Paint()..color = Colors.white.withValues(alpha: 0.4);
       canvas.drawCircle(pos.translate(-droplet.size * 0.3, -droplet.size * 0.3), droplet.size * 0.2, glarePaint);
 
       if (droplet.isMoving) {
         final trailPaint = Paint()
-          ..color = Colors.white.withOpacity(0.05)
+          ..color = Colors.white.withValues(alpha: 0.05)
           ..strokeWidth = droplet.size * 0.5
           ..strokeCap = StrokeCap.round;
         canvas.drawLine(pos, pos.translate(0, -20), trailPaint);
