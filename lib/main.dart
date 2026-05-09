@@ -128,7 +128,7 @@ class AuthWrapper extends ConsumerWidget {
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           // If setup is not complete OR Pro setup is needed
-          if (!audioState.isSetupComplete || audioState.isProSetupNeeded) {
+          if (!audioState.isSetupComplete || audioState.isPremiumSetupNeeded) {
             return const SetupScreen();
           }
           return const HomeScreen();

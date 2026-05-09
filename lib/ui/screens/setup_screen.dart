@@ -22,7 +22,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
       final audioState = ref.read(audioProvider);
       if (audioState.availableSounds.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          ref.read(audioProvider.notifier).startInitialSetup(forPro: audioState.isProSetupNeeded);
+          ref.read(audioProvider.notifier).startInitialSetup(forPremium: audioState.isPremiumSetupNeeded);
         });
         _isInitialized = true;
       }
@@ -62,7 +62,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                     .shimmer(duration: 2.seconds),
                 const SizedBox(height: 40),
                 Text(
-                  audioState.isProSetupNeeded ? "Setting up Pro Sounds" : "Initial Setup",
+                  audioState.isPremiumSetupNeeded ? "Setting up Premium Sounds" : "Initial Setup",
                   style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 const SizedBox(height: 16),
