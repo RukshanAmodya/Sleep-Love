@@ -120,10 +120,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  // Top Left: Pro Status Indicator
                                   GestureDetector(
                                     key: _proStatusKey,
-                                    onTap: () => hasPremium ? null : _showUpgradeSheet(context),
+                                    onTap: () {
+                                      if (hasPremium) {
+                                        _showAlreadyProDialog();
+                                      } else {
+                                        _showUpgradeSheet(context);
+                                      }
+                                    },
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                       decoration: BoxDecoration(
@@ -153,7 +158,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               
                               const Spacer(),
                               
-                              // LARGE CENTER TIMER (Always visible now)
                               _buildCenterPremiumTimer(user, hasPremium, key: _timerKey),
 
                               const Spacer(),
@@ -279,7 +283,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           bottomNavigationBar: _buildBottomBar(audioState, hasPremium, isDark, key: _controlsKey),
         ),
 
-        // Tour Overlay
         if (_showTour && audioState.availableSounds.isNotEmpty)
           TourOverlay(
             onComplete: _markTourComplete,
@@ -313,6 +316,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
       ],
+    );
+  }
+
+  void _showAlreadyProDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surfaceDark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("Premium Active", style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text("You already have full access to all features and sounds. Enjoy your premium experience!", style: GoogleFonts.outfit(color: Colors.white70)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Awesome", style: TextStyle(color: AppColors.primary))),
+        ],
+      ),
     );
   }
 
@@ -464,47 +482,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        maxChildSize: 0.9,
-        minChildSize: 0.4,
-        builder: (c, s) => Container(
-          decoration: BoxDecoration(color: AppColors.bgDark, borderRadius: const BorderRadius.vertical(top: Radius.circular(40))),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 24),
-              Text("Liquid Mixer", style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-              const SizedBox(height: 8),
-              if (!hasPremium) Text("Limit: 2 Sounds Active", style: TextStyle(color: AppColors.primary, fontSize: 12)),
-              const SizedBox(height: 24),
-              Expanded(
-                child: ListView.builder(
-                  controller: s,
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  itemCount: state.activeSounds.length,
-                  itemBuilder: (c, i) {
-                    final sound = state.activeSounds[i];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: LiquidGlassCard(
-                        padding: const EdgeInsets.all(16),
-                        borderRadius: 20,
-                        child: Row(
-                          children: [
-                            Icon(sound.icon, color: AppColors.primary),
-                            const SizedBox(width: 16),
-                            Expanded(child: Text(sound.name, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white))),
-                            SizedBox(width: 150, child: Slider(value: sound.volume, activeColor: AppColors.primary, inactiveColor: Colors.white10, onChanged: (v) => ref.read(audioProvider.notifier).updateVolume(sound.id, v))),
-                          ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          maxChildSize: 0.9,
+          minChildSize: 0.4,
+          builder: (c, s) => Container(
+            decoration: BoxDecoration(color: AppColors.bgDark, borderRadius: const BorderRadius.vertical(top: Radius.circular(40))),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+                const SizedBox(height: 24),
+                Text("Liquid Mixer", style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                const SizedBox(height: 8),
+                if (!hasPremium) Text("Limit: 2 Sounds Active", style: TextStyle(color: AppColors.primary, fontSize: 12)),
+                const SizedBox(height: 24),
+                Expanded(
+                  child: ListView.builder(
+                    controller: s,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    itemCount: state.activeSounds.length,
+                    itemBuilder: (c, i) {
+                      final sound = state.activeSounds[i];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: LiquidGlassCard(
+                          padding: const EdgeInsets.all(16),
+                          borderRadius: 20,
+                          child: Row(
+                            children: [
+                              Icon(sound.icon, color: AppColors.primary),
+                              const SizedBox(width: 16),
+                              Expanded(child: Text(sound.name, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white))),
+                              SizedBox(
+                                width: 150, 
+                                child: Slider(
+                                  value: sound.volume, 
+                                  activeColor: AppColors.primary, 
+                                  inactiveColor: Colors.white10, 
+                                  onChanged: (v) {
+                                    setSheetState(() {
+                                      sound.volume = v; // Smooth UI update
+                                    });
+                                    ref.read(audioProvider.notifier).updateVolume(sound.id, v); // Audio update
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ).animate().fadeIn(delay: (i * 100).ms).slideX(begin: 0.1, end: 0);
-                  },
+                      ).animate().fadeIn(delay: (i * 100).ms).slideX(begin: 0.1, end: 0);
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
