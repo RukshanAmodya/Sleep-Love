@@ -88,6 +88,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           key: _scaffoldKey,
           backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
           drawer: _buildDrawer(context, isDark),
+          drawerEnableOpenDragGesture: false, // Disable swipe to open drawer
           body: AtmosphericOverlay(
             showRain: hasRainActive,
             showThunder: audioState.activeSounds.any((s) => s.name.toLowerCase().contains('thunder')),
@@ -95,64 +96,71 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               physics: const BouncingScrollPhysics(),
               slivers: [
                 SliverToBoxAdapter(
-                  child: AnimatedSwitcher(
-                    duration: 1.seconds,
-                    child: Container(
-                      key: ValueKey(_getBackgroundImage()),
-                      height: 320,
-                      decoration: BoxDecoration(
-                        image: DecorationImage(image: AssetImage(_getBackgroundImage()), fit: BoxFit.cover),
-                      ),
+                  child: GestureDetector(
+                    onDoubleTap: () => _scaffoldKey.currentState?.openDrawer(),
+                    child: AnimatedSwitcher(
+                      duration: 1.seconds,
                       child: Container(
+                        key: ValueKey(_getBackgroundImage()),
+                        height: 380, // Increased height for center timer
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.transparent, isDark ? AppColors.bgDark : AppColors.bgLight], 
-                            begin: Alignment.topCenter, 
-                            end: Alignment.bottomCenter
-                          ),
+                          image: DecorationImage(image: AssetImage(_getBackgroundImage()), fit: BoxFit.cover),
                         ),
-                        padding: const EdgeInsets.fromLTRB(24, 60, 24, 20),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                // Top Left: Pro Status Indicator (Hamburger removed as requested)
-                                GestureDetector(
-                                  key: _proStatusKey,
-                                  onTap: () => hasPremium ? null : _showUpgradeSheet(context),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: hasPremium ? AppColors.accent.withOpacity(0.2) : Colors.white10, 
-                                      borderRadius: BorderRadius.circular(20), 
-                                      border: Border.all(color: hasPremium ? AppColors.accent : Colors.white24)
-                                    ),
-                                    child: Row(children: [
-                                      Icon(Icons.star_rounded, size: 16, color: hasPremium ? AppColors.accent : Colors.amber), 
-                                      const SizedBox(width: 8), 
-                                      Text(hasPremium ? "Pro Activated" : "Get Pro", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white))
-                                    ]),
-                                  ),
-                                ).animate(target: hasPremium ? 1 : 0).shimmer(duration: 2.seconds),
-                                
-                                if (!user.isPro)
-                                  _buildPremiumProgressBar(user, key: _timerKey),
-
-                                GestureDetector(
-                                  key: _themeKey,
-                                  onTap: () => ref.read(themeProvider.notifier).toggleTheme(),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white10),
-                                    child: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, color: Colors.white, size: 24),
-                                  ),
-                                ),
-                              ],
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [Colors.transparent, isDark ? AppColors.bgDark : AppColors.bgLight], 
+                              begin: Alignment.topCenter, 
+                              end: Alignment.bottomCenter
                             ),
-                            const Spacer(),
-                            Text(dailyQuote, textAlign: TextAlign.center, style: GoogleFonts.outfit(fontSize: 14, color: isDark ? Colors.white70 : Colors.black54)).animate().fadeIn().slideY(begin: 1, end: 0),
-                          ],
+                          ),
+                          padding: const EdgeInsets.fromLTRB(24, 60, 24, 20),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  GestureDetector(
+                                    key: _proStatusKey,
+                                    onTap: () => hasPremium ? null : _showUpgradeSheet(context),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: hasPremium ? AppColors.accent.withOpacity(0.2) : Colors.white10, 
+                                        borderRadius: BorderRadius.circular(20), 
+                                        border: Border.all(color: hasPremium ? AppColors.accent : Colors.white24)
+                                      ),
+                                      child: Row(children: [
+                                        Icon(Icons.star_rounded, size: 16, color: hasPremium ? AppColors.accent : Colors.amber), 
+                                        const SizedBox(width: 8), 
+                                        Text(hasPremium ? "Pro Activated" : "Get Pro", style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: Colors.white))
+                                      ]),
+                                    ),
+                                  ).animate(target: hasPremium ? 1 : 0).shimmer(duration: 2.seconds),
+                                  
+                                  GestureDetector(
+                                    key: _themeKey,
+                                    onTap: () => ref.read(themeProvider.notifier).toggleTheme(),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white10),
+                                      child: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, color: Colors.white, size: 24),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              
+                              const Spacer(),
+                              
+                              // LARGE CENTER TIMER
+                              if (!user.isPro)
+                                _buildCenterPremiumTimer(user, key: _timerKey),
+
+                              const Spacer(),
+                              
+                              Text(dailyQuote, textAlign: TextAlign.center, style: GoogleFonts.outfit(fontSize: 14, color: isDark ? Colors.white70 : Colors.black54)).animate().fadeIn().slideY(begin: 1, end: 0),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -280,12 +288,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               TourStep(
                 targetKey: _proStatusKey,
                 title: "Premium Access",
-                description: "View your current status and unlock unlimited sounds. Swipe from the right edge anytime to open the main menu.",
+                description: "View your current status and unlock unlimited sounds. Double tap the top section anytime to open the main menu.",
               ),
               TourStep(
                 targetKey: _timerKey,
                 title: "Premium Timer",
-                description: "Watch ads to earn premium access hours. This bar shows your remaining premium time.",
+                description: "Watch ads to earn premium access hours. This central indicator shows your remaining time.",
               ),
               TourStep(
                 targetKey: _themeKey,
@@ -308,7 +316,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildPremiumProgressBar(UserState user, {Key? key}) {
+  Widget _buildCenterPremiumTimer(UserState user, {Key? key}) {
     final progress = ref.watch(premiumProgressProvider);
     final hours = (user.premiumSecondsRemaining / 3600).floor();
     final mins = ((user.premiumSecondsRemaining % 3600) / 60).floor();
@@ -320,24 +328,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           alignment: Alignment.center,
           children: [
             SizedBox(
-              height: 40, width: 40,
+              height: 100, width: 100,
               child: CircularProgressIndicator(
                 value: progress == 0 && user.premiumSecondsRemaining > 0 ? 1 : progress,
-                strokeWidth: 3,
+                strokeWidth: 6,
                 backgroundColor: Colors.white10,
                 valueColor: const AlwaysStoppedAnimation(AppColors.accent),
               ),
             ),
-            Icon(Icons.bolt_rounded, color: user.premiumSecondsRemaining > 0 ? AppColors.accent : Colors.white24, size: 20),
+            Column(
+              children: [
+                const Icon(Icons.bolt_rounded, color: AppColors.accent, size: 28),
+                Text(
+                  user.premiumSecondsRemaining > 0 ? "${hours}h ${mins}m" : "00:00",
+                  style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ],
+            ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 16),
         Text(
-          user.premiumSecondsRemaining > 0 ? "${hours}h ${mins}m" : "No Premium",
-          style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+          user.premiumSecondsRemaining > 0 ? "Premium Active" : "No Premium",
+          style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white, shadows: [const Shadow(blurRadius: 10, color: Colors.black45)]),
         ),
       ],
-    );
+    ).animate().fadeIn(duration: 800.ms).scale(begin: const Offset(0.8, 0.8));
   }
 
   Widget _buildDrawer(BuildContext context, bool isDark) {

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/models/sound_model.dart';
 import '../data/repositories/audio_repository.dart';
 import '../services/notification_service.dart';
+import 'user_provider.dart';
 
 class AudioState {
   final List<SoundModel> availableSounds;
@@ -12,6 +13,7 @@ class AudioState {
   final Set<String> loadingIds;
   final double setupProgress;
   final bool isSetupComplete;
+  final bool isProSetupNeeded;
 
   AudioState({
     required this.availableSounds,
@@ -19,6 +21,7 @@ class AudioState {
     this.loadingIds = const {},
     this.setupProgress = 0,
     this.isSetupComplete = false,
+    this.isProSetupNeeded = false,
   });
 
   AudioState copyWith({
@@ -27,6 +30,7 @@ class AudioState {
     Set<String>? loadingIds,
     double? setupProgress,
     bool? isSetupComplete,
+    bool? isProSetupNeeded,
   }) {
     return AudioState(
       availableSounds: availableSounds ?? this.availableSounds,
@@ -34,6 +38,7 @@ class AudioState {
       loadingIds: loadingIds ?? this.loadingIds,
       setupProgress: setupProgress ?? this.setupProgress,
       isSetupComplete: isSetupComplete ?? this.isSetupComplete,
+      isProSetupNeeded: isProSetupNeeded ?? this.isProSetupNeeded,
     );
   }
 }
@@ -72,21 +77,38 @@ class AudioNotifier extends Notifier<AudioState> {
           ));
         });
         state = state.copyWith(availableSounds: sounds);
+        _checkIfProSetupNeeded();
       }
     });
   }
 
-  Future<void> startInitialSetup() async {
-    final freeSounds = state.availableSounds.where((s) => s.isFree).toList();
-    if (freeSounds.isEmpty) return;
+  void _checkIfProSetupNeeded() async {
+    final user = ref.read(userProvider);
+    if (user.isPro) {
+      final prefs = await SharedPreferences.getInstance();
+      final proComplete = prefs.getBool('pro_setup_complete_${user.uid}') ?? false;
+      if (!proComplete) {
+        state = state.copyWith(isProSetupNeeded: true);
+      }
+    }
+  }
 
-    for (int i = 0; i < freeSounds.length; i++) {
-      final sound = freeSounds[i];
-      state = state.copyWith(loadingIds: {...state.loadingIds, sound.id}, setupProgress: (i + 1) / freeSounds.length);
+  Future<void> startInitialSetup({bool forPro = false}) async {
+    final targets = forPro 
+        ? state.availableSounds.where((s) => !s.isFree).toList()
+        : state.availableSounds.where((s) => s.isFree).toList();
+        
+    if (targets.isEmpty) return;
+
+    for (int i = 0; i < targets.length; i++) {
+      final sound = targets[i];
+      state = state.copyWith(
+        loadingIds: {...state.loadingIds, sound.id}, 
+        setupProgress: (i + 1) / targets.length
+      );
       
-      // Update Notification if backgrounded
       if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
-        NotificationService.showProgress(i + 1, freeSounds.length);
+        NotificationService.showProgress(i + 1, targets.length);
       }
 
       await _repository.cacheOnly(sound); 
@@ -94,8 +116,14 @@ class AudioNotifier extends Notifier<AudioState> {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('setup_complete', true);
-    state = state.copyWith(isSetupComplete: true, setupProgress: 1.0);
+    if (forPro) {
+      final user = ref.read(userProvider);
+      await prefs.setBool('pro_setup_complete_${user.uid}', true);
+      state = state.copyWith(isProSetupNeeded: false, setupProgress: 1.0);
+    } else {
+      await prefs.setBool('setup_complete', true);
+      state = state.copyWith(isSetupComplete: true, setupProgress: 1.0);
+    }
     
     if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
       NotificationService.showComplete();
@@ -124,16 +152,13 @@ class AudioNotifier extends Notifier<AudioState> {
     final isActive = state.activeSounds.any((s) => s.id == sound.id);
     
     if (isActive) {
-      // Toggle OFF
       _repository.stopSound(sound.id);
       state = state.copyWith(
         activeSounds: state.activeSounds.where((s) => s.id != sound.id).toList(),
       );
     } else {
-      // Toggle ON
-      // Check Free Limit
       if (!isPro && state.activeSounds.length >= 2) {
-        throw 'Free limit reached'; // Handled in UI
+        throw 'Free limit reached';
       }
 
       state = state.copyWith(loadingIds: {...state.loadingIds, sound.id});

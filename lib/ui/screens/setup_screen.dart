@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants.dart';
 import '../../providers/audio_provider.dart';
-import 'home_screen.dart';
 
 class SetupScreen extends ConsumerStatefulWidget {
   const SetupScreen({super.key});
@@ -14,81 +13,95 @@ class SetupScreen extends ConsumerStatefulWidget {
 }
 
 class _SetupScreenState extends ConsumerState<SetupScreen> {
-  bool _setupStarted = false;
+  bool _isInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      final audioState = ref.read(audioProvider);
+      if (audioState.availableSounds.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(audioProvider.notifier).startInitialSetup(forPro: audioState.isProSetupNeeded);
+        });
+        _isInitialized = true;
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final audioState = ref.watch(audioProvider);
 
-    // Use a post-frame callback to safely trigger setup
-    if (!_setupStarted && audioState.availableSounds.isNotEmpty) {
-      _setupStarted = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(audioProvider.notifier).startInitialSetup();
-      });
-    }
-
-    // Auto-navigate when complete
-    if (audioState.isSetupComplete) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      });
-    }
-
     return Scaffold(
       backgroundColor: AppColors.bgDark,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.auto_awesome_rounded, size: 80, color: AppColors.primary)
-                  .animate(onPlay: (c) => c.repeat())
-                  .shimmer(duration: 2.seconds)
-                  .scale(duration: 1.seconds, curve: Curves.easeInOut),
-              const SizedBox(height: 40),
-              Text(
-                "Setting up your Experience",
-                textAlign: TextAlign.center,
-                style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                "We're preparing high-quality sounds for instant playback. Please wait...",
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white38, fontSize: 14),
-              ),
-              const SizedBox(height: 60),
-              
-              // Progress Bar
-              Container(
-                height: 10,
-                width: double.infinity,
-                decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(10)),
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: audioState.setupProgress.clamp(0.0, 1.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: AppColors.purpleGradient,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 10)],
-                    ),
-                  ),
-                ),
-              ).animate().fadeIn(delay: 500.ms),
-              
-              const SizedBox(height: 20),
-              Text(
-                "${(audioState.setupProgress * 100).toInt()}% Complete",
-                style: GoogleFonts.outfit(fontWeight: FontWeight.bold, color: AppColors.primary),
-              ),
-            ],
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/nature_background.png',
+            fit: BoxFit.cover,
+            opacity: const AlwaysStoppedAnimation(0.5),
           ),
-        ),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.black.withOpacity(0.8), Colors.transparent],
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.downloading_rounded, size: 80, color: AppColors.primary)
+                    .animate(onPlay: (c) => c.repeat())
+                    .shimmer(duration: 2.seconds),
+                const SizedBox(height: 40),
+                Text(
+                  audioState.isProSetupNeeded ? "Setting up Pro Sounds" : "Initial Setup",
+                  style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "Downloading high-quality atmospheric sounds for offline use...",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(fontSize: 16, color: Colors.white70),
+                ),
+                const SizedBox(height: 60),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      height: 8,
+                      decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(4)),
+                    ),
+                    FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: audioState.setupProgress,
+                      child: Container(
+                        height: 8,
+                        decoration: BoxDecoration(
+                          gradient: AppColors.purpleGradient,
+                          borderRadius: BorderRadius.circular(4),
+                          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.5), blurRadius: 10)],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "${(audioState.setupProgress * 100).toInt()}%",
+                  style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

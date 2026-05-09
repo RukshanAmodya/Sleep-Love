@@ -6,6 +6,7 @@ import 'core/constants.dart';
 import 'services/firebase_service.dart';
 import 'services/ad_service.dart';
 import 'services/notification_service.dart';
+import 'providers/audio_provider.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/login_screen.dart';
 import 'ui/screens/setup_screen.dart';
@@ -115,15 +116,23 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final audioState = ref.watch(audioProvider);
+    
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        if (snapshot.hasData) return const SetupScreen();
+        if (snapshot.hasData) {
+          // If setup is not complete OR Pro setup is needed
+          if (!audioState.isSetupComplete || audioState.isProSetupNeeded) {
+            return const SetupScreen();
+          }
+          return const HomeScreen();
+        }
         return const LoginScreen();
       },
     );
