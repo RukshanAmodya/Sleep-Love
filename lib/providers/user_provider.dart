@@ -27,29 +27,39 @@ class UserNotifier extends Notifier<UserState> {
 
   @override
   UserState build() {
+    _loadLocalStatus();
     _listenToAuth();
     return UserState();
+  }
+
+  Future<void> _loadLocalStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isPro = prefs.getBool('is_pro_permanent') ?? false;
+    final seconds = prefs.getInt('premium_seconds_local') ?? 0;
+    state = state.copyWith(isPro: isPro, premiumSecondsRemaining: seconds);
+    if (seconds > 0) _startTimer();
   }
 
   void _listenToAuth() {
     _auth.authStateChanges().listen((user) async {
       if (user != null) {
         final prefs = await SharedPreferences.getInstance();
-        final savedSeconds = prefs.getInt('premium_seconds_${user.uid}') ?? 0;
+        final savedSeconds = prefs.getInt('premium_seconds_${user.uid}') ?? state.premiumSecondsRemaining;
         
-        _db.ref('users/${user.uid}').onValue.listen((event) {
+        _db.ref('users/${user.uid}').onValue.listen((event) async {
           final data = event.snapshot.value as Map?;
           final isPermanentPro = data?['isPro'] ?? false;
+          
           state = state.copyWith(
             uid: user.uid,
             isPro: isPermanentPro,
             premiumSecondsRemaining: savedSeconds,
           );
+
+          // Sync to local
+          await prefs.setBool('is_pro_permanent', isPermanentPro);
           _startTimer();
         });
-      } else {
-        _stopTimer();
-        state = UserState();
       }
     });
   }
@@ -61,15 +71,15 @@ class UserNotifier extends Notifier<UserState> {
         final newSeconds = state.premiumSecondsRemaining - 1;
         state = state.copyWith(premiumSecondsRemaining: newSeconds);
         
-        // Persist localy
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('premium_seconds_${state.uid}', newSeconds);
+        if (state.uid != null) {
+          await prefs.setInt('premium_seconds_${state.uid}', newSeconds);
+        }
+        await prefs.setInt('premium_seconds_local', newSeconds);
+      } else if (state.premiumSecondsRemaining <= 0) {
+        _countdownTimer?.cancel();
       }
     });
-  }
-
-  void _stopTimer() {
-    _countdownTimer?.cancel();
   }
 
   void addPremiumTime(int hours) async {
@@ -78,12 +88,20 @@ class UserNotifier extends Notifier<UserState> {
     state = state.copyWith(premiumSecondsRemaining: newSeconds);
     
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('premium_seconds_${state.uid}', newSeconds);
+    if (state.uid != null) {
+      await prefs.setInt('premium_seconds_${state.uid}', newSeconds);
+    }
+    await prefs.setInt('premium_seconds_local', newSeconds);
+    _startTimer();
   }
 
   bool get hasPremiumAccess => state.isPro || state.premiumSecondsRemaining > 0;
 
   Future<void> upgradeToPro() async {
+    state = state.copyWith(isPro: true);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_pro_permanent', true);
+    
     if (state.uid != null) {
       await _db.ref('users/${state.uid}').update({'isPro': true});
     }
@@ -96,8 +114,9 @@ class UserNotifier extends Notifier<UserState> {
 
 final userProvider = NotifierProvider<UserNotifier, UserState>(UserNotifier.new);
 final hasPremiumProvider = Provider((ref) => ref.watch(userProvider.notifier).hasPremiumAccess);
+
 final premiumProgressProvider = Provider((ref) {
-  final seconds = ref.watch(userProvider).premiumSecondsRemaining;
-  // Progress based on 1 hour max for the bar view, or cumulative
-  return (seconds % 3600) / 3600;
+  final user = ref.watch(userProvider);
+  if (user.isPro) return 1.0;
+  return (user.premiumSecondsRemaining % 3600) / 3600;
 });

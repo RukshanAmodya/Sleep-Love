@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Ceylonix Unity Ads Manager — Singleton Pattern
 /// ================================================
-/// Game ID: 6089450
+/// Game ID: 6109553
 /// Interstitial: Interstitial_Android
 /// Rewarded: Rewarded_Android
 /// Banner: Banner_Android
@@ -15,7 +15,7 @@ class AdService {
   AdService._internal();
 
   // --- Constants ---
-  static const String _gameId = '6089450';
+  static const String _gameId = '6109553';
   static const String interstitialId = 'Interstitial_Android';
   static const String rewardedId = 'Rewarded_Android';
   static const String bannerId = 'Banner_Android';
