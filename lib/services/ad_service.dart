@@ -1,10 +1,11 @@
 import 'package:unity_levelplay_mediation/unity_levelplay_mediation.dart';
 
 class AdService {
-  // Using only Android App ID as requested
+  // Your Android App Key
   static const String androidAppKey = '6109553';
   
-  // NOTE: Replace these with your actual Ad Unit IDs from LevelPlay Dashboard
+  // IMPORTANT: Replace these with your REAL Ad Unit IDs from LevelPlay Dashboard
+  // Real ads will only show if these IDs are correct and active in the dashboard.
   static const String rewardedAdUnitId = 'YOUR_REWARDED_AD_UNIT_ID'; 
   static const String interstitialAdUnitId = 'YOUR_INTERSTITIAL_AD_UNIT_ID';
 
@@ -16,14 +17,19 @@ class AdService {
 
   static Future<void> init() async {
     try {
+      // 1. Production Configuration: No test mode flags set here.
+      // Make sure 'is_test_suite' is NOT enabled in production.
+      await LevelPlay.setMetaData({'is_test_suite': ['disable']});
+      
       LevelPlayInitRequest initRequest = LevelPlayInitRequest.builder(appKey).build();
 
+      // 2. Initialize with Listener
       await LevelPlay.init(
         initRequest: initRequest,
         initListener: MyLevelPlayInitListener(),
       );
       
-      print('Unity LevelPlay (Android Only) Initialization Started...');
+      print('Unity LevelPlay (Production) Initialization Started...');
     } catch (e) {
       print('Unity LevelPlay Initialization Failed: $e');
     }
@@ -73,13 +79,17 @@ class AdService {
   }
 }
 
+// --- Listeners ---
+
 class MyLevelPlayInitListener extends LevelPlayInitListener {
   @override
-  void onInitFailed(LevelPlayInitError error) => print('Unity LevelPlay Init Failed: ${error.errorMessage}');
+  void onInitFailed(LevelPlayInitError error) {
+    print('Unity LevelPlay Init Failed: ${error.errorMessage}');
+  }
 
   @override
   void onInitSuccess(LevelPlayConfiguration configuration) {
-    print('Unity LevelPlay Init Success!');
+    print('Unity LevelPlay Init Success (Production Mode)!');
     AdService.setupAds();
   }
 }
@@ -101,7 +111,10 @@ class MyRewardedAdListener extends LevelPlayRewardedAdListener {
   @override
   void onAdClicked(LevelPlayAdInfo adInfo) => print('Rewarded Ad Clicked');
   @override
-  void onAdRewarded(LevelPlayReward reward, LevelPlayAdInfo adInfo) => AdService.handleReward();
+  void onAdRewarded(LevelPlayReward reward, LevelPlayAdInfo adInfo) {
+    print('User earned reward: ${reward.name}');
+    AdService.handleReward();
+  }
   @override
   void onAdInfoChanged(LevelPlayAdInfo adInfo) {}
 }
